@@ -35,3 +35,8 @@ def get_database_dev_cond_region():
     CONNECTION_STRING = "mongodb://"+config.USER+":"+config.PASS+"@146.59.157.18:27017/admin"
     client = MongoClient(CONNECTION_STRING)
     return client['agri_data']['dev_cond_region']
+
+def get_database_cot_euronext():
+    CONNECTION_STRING = "mongodb://"+config.USER+":"+config.PASS+"@146.59.157.18:27017/admin"
+    client = MongoClient(CONNECTION_STRING)
+    return client['cot_data']['euronext_commodity']
