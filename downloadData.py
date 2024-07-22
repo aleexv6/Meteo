@@ -39,9 +39,9 @@ def request_data(id_station_list, start_date, end_date):
     df_list = []
     for station in id_station_list:
         print(station)
-        #if (station == '39470400') or (station == '70061400'):
-        #    print('Bugged report found, breaking')
-        #    continue
+        if (station == '05077404'):
+            print('Bugged report found, breaking')
+            continue
         for start, end in zip(start_date, end_date):
             url = f'https://public-api.meteofrance.fr/public/DPClim/v1/commande-station/quotidienne?id-station={station}&date-deb-periode={start}&date-fin-periode={end}'
             while True:
@@ -60,14 +60,14 @@ def request_data(id_station_list, start_date, end_date):
     
 if __name__ == '__main__':
     #token expires
-    token = 'eyJ4NXQiOiJZV0kxTTJZNE1qWTNOemsyTkRZeU5XTTRPV014TXpjek1UVmhNbU14T1RSa09ETXlOVEE0Tnc9PSIsImtpZCI6ImdhdGV3YXlfY2VydGlmaWNhdGVfYWxpYXMiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJBbGVleFY2QGNhcmJvbi5zdXBlciIsImFwcGxpY2F0aW9uIjp7Im93bmVyIjoiQWxlZXhWNiIsInRpZXJRdW90YVR5cGUiOm51bGwsInRpZXIiOiJVbmxpbWl0ZWQiLCJuYW1lIjoiRGVmYXVsdEFwcGxpY2F0aW9uIiwiaWQiOjEzNDgyLCJ1dWlkIjoiYjIwZWI3NWQtZDcxMS00MjJlLThlMzAtMWMzMzgwY2FlNzVjIn0sImlzcyI6Imh0dHBzOlwvXC9wb3J0YWlsLWFwaS5tZXRlb2ZyYW5jZS5mcjo0NDNcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6eyI1MFBlck1pbiI6eyJ0aWVyUXVvdGFUeXBlIjoicmVxdWVzdENvdW50IiwiZ3JhcGhRTE1heENvbXBsZXhpdHkiOjAsImdyYXBoUUxNYXhEZXB0aCI6MCwic3RvcE9uUXVvdGFSZWFjaCI6dHJ1ZSwic3Bpa2VBcnJlc3RMaW1pdCI6MCwic3Bpa2VBcnJlc3RVbml0Ijoic2VjIn19LCJrZXl0eXBlIjoiUFJPRFVDVElPTiIsInN1YnNjcmliZWRBUElzIjpbeyJzdWJzY3JpYmVyVGVuYW50RG9tYWluIjoiY2FyYm9uLnN1cGVyIiwibmFtZSI6IkRvbm5lZXNQdWJsaXF1ZXNDbGltYXRvbG9naWUiLCJjb250ZXh0IjoiXC9wdWJsaWNcL0RQQ2xpbVwvdjEiLCJwdWJsaXNoZXIiOiJhZG1pbl9tZiIsInZlcnNpb24iOiJ2MSIsInN1YnNjcmlwdGlvblRpZXIiOiI1MFBlck1pbiJ9XSwiZXhwIjoxODE1OTg5NTA4LCJ0b2tlbl90eXBlIjoiYXBpS2V5IiwiaWF0IjoxNzIxMzE2NzA4LCJqdGkiOiJkNWI2YWYxNi1iZDZlLTRjNWQtOTE1NS1lMzE1MWZlNjIzNDYifQ==.Xd1aqPnSIL4058Z8GrdLJqFu-U5HA2CPA7HfZ4jvZGqv_KjckeRWKCWjMuXBQmCxH4c2haalASFMqJVGV33imzW8IG-bIS5eCTZE2hfzg07SNEL9Z-2BH5d4W8qADyRv-JuWB8b_MJAX6FdYe6DjYpDR6zGjE60xn7ieRtkSi5dUpQtMXuSNNFpGLQ2LyhmM8r1fGrk4HgnCuBkus19navV3nVgY2k9o0QeGEQYDLcySgpGwsJ4Qv2_7sNxrv8txiPbzTlW9miHvYXDhnh52YQdwW4xNKyi_fTpVbR2oLFwL4UfFMBvpyA2_Pd3CmYjryJznvDVn4K-2nJATWHTAFg=='
+    token = 'eyJ4NXQiOiJZV0kxTTJZNE1qWTNOemsyTkRZeU5XTTRPV014TXpjek1UVmhNbU14T1RSa09ETXlOVEE0Tnc9PSIsImtpZCI6ImdhdGV3YXlfY2VydGlmaWNhdGVfYWxpYXMiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJBbGVleFY2QGNhcmJvbi5zdXBlciIsImFwcGxpY2F0aW9uIjp7Im93bmVyIjoiQWxlZXhWNiIsInRpZXJRdW90YVR5cGUiOm51bGwsInRpZXIiOiJVbmxpbWl0ZWQiLCJuYW1lIjoiRGVmYXVsdEFwcGxpY2F0aW9uIiwiaWQiOjEzNDgyLCJ1dWlkIjoiYjIwZWI3NWQtZDcxMS00MjJlLThlMzAtMWMzMzgwY2FlNzVjIn0sImlzcyI6Imh0dHBzOlwvXC9wb3J0YWlsLWFwaS5tZXRlb2ZyYW5jZS5mcjo0NDNcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6eyI1MFBlck1pbiI6eyJ0aWVyUXVvdGFUeXBlIjoicmVxdWVzdENvdW50IiwiZ3JhcGhRTE1heENvbXBsZXhpdHkiOjAsImdyYXBoUUxNYXhEZXB0aCI6MCwic3RvcE9uUXVvdGFSZWFjaCI6dHJ1ZSwic3Bpa2VBcnJlc3RMaW1pdCI6MCwic3Bpa2VBcnJlc3RVbml0Ijoic2VjIn19LCJrZXl0eXBlIjoiUFJPRFVDVElPTiIsInN1YnNjcmliZWRBUElzIjpbeyJzdWJzY3JpYmVyVGVuYW50RG9tYWluIjoiY2FyYm9uLnN1cGVyIiwibmFtZSI6IkRvbm5lZXNQdWJsaXF1ZXNDbGltYXRvbG9naWUiLCJjb250ZXh0IjoiXC9wdWJsaWNcL0RQQ2xpbVwvdjEiLCJwdWJsaXNoZXIiOiJhZG1pbl9tZiIsInZlcnNpb24iOiJ2MSIsInN1YnNjcmlwdGlvblRpZXIiOiI1MFBlck1pbiJ9XSwiZXhwIjoxODE2MjI3NzIyLCJ0b2tlbl90eXBlIjoiYXBpS2V5IiwiaWF0IjoxNzIxNTU0OTIyLCJqdGkiOiJjNzY1YTAyZi05ODBhLTQ3YzItODg3NC1hZTg4MWQxYzljZDEifQ==.b3D-oRfuTruX_IiujfZHcUSVGwfjqlKoIEy90O8V-8k8fu1qSriVU4OIyIlLmk-vVpjrl2VxELQA98_neylZ4vBLnyvLksCCy7rROknjMAMgzyYecZrqv6whoA2vs4rRG966tyfEF0Je7y_d7NTQcOGdU24KPEQ2WDYUl_i4tCvmFTqekBiXTmcpu9n2cxkQPXmpgQtMOB292lDhGaADhVTh3qe_uB_tu0KgT0biEaMcBwctyDrvS0Jc2MQbajWS8fwjeZEV3JoyeDZ0FgUMB5ulIXSZF9kcOGVzy6CSAjYTfe7DdYG82xg1Auujk1g5W12UDkjftZIL-Lhva1On8A=='
     headers = {'apikey': token}
 
     start = ['2000-01-01T00:00:00Z', '2001-01-01T00:00:00Z', '2002-01-01T00:00:00Z', '2003-01-01T00:00:00Z', '2004-01-01T00:00:00Z', '2005-01-01T00:00:00Z',
             '2006-01-01T00:00:00Z', '2007-01-01T00:00:00Z', '2008-01-01T00:00:00Z', '2009-01-01T00:00:00Z', '2010-01-01T00:00:00Z', '2011-01-01T00:00:00Z']
     end = ['2000-12-31T23:00:00Z', '2001-12-31T23:00:00Z', '2002-12-31T23:00:00Z', '2003-12-31T23:00:00Z', '2004-12-31T23:00:00Z', '2005-12-31T23:00:00Z',
           '2006-12-31T23:00:00Z', '2007-12-31T23:00:00Z', '2008-12-31T23:00:00Z', '2009-12-31T23:00:00Z', '2010-12-31T23:00:00Z', '2011-12-31T23:00:00Z']
-    hdf = [1,3,7,15,26,38,42,43,63,69,73,74]
+    hdf = [4,5,6,13,83,84]
 
 
     list_hdf = []
@@ -76,5 +76,5 @@ if __name__ == '__main__':
         df = request_data(data[data['posteOuvert']]['id'], start, end)
         list_hdf.append(df)
     df_hdf = pd.concat(list_hdf).reset_index(drop=True)
-    df_hdf.to_csv('auvergne_ra_2000_2011.csv')
+    df_hdf.to_csv('paca_2000_2011.csv')
     print(df_hdf)
