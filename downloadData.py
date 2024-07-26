@@ -3,7 +3,6 @@ import json
 import pandas as pd
 from io import StringIO 
 import time
-import matplotlib.pyplot as plt
 
 def get_first_two_digits(n):
     str_n = str(abs(n))  # Use abs to handle negative numbers correctly
@@ -39,7 +38,7 @@ def request_data(id_station_list, start_date, end_date):
     df_list = []
     for station in id_station_list:
         print(station)
-        if (station == '09032403'):
+        if (station == '01414001') or (station == '74080404') or (station == '74290003'):
             print('Bugged report found, breaking')
             continue
         for start, end in zip(start_date, end_date):
@@ -60,14 +59,14 @@ def request_data(id_station_list, start_date, end_date):
     
 if __name__ == '__main__':
     #token expires
-    token = 'eyJ4NXQiOiJZV0kxTTJZNE1qWTNOemsyTkRZeU5XTTRPV014TXpjek1UVmhNbU14T1RSa09ETXlOVEE0Tnc9PSIsImtpZCI6ImdhdGV3YXlfY2VydGlmaWNhdGVfYWxpYXMiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJBbGVleFY2QGNhcmJvbi5zdXBlciIsImFwcGxpY2F0aW9uIjp7Im93bmVyIjoiQWxlZXhWNiIsInRpZXJRdW90YVR5cGUiOm51bGwsInRpZXIiOiJVbmxpbWl0ZWQiLCJuYW1lIjoiRGVmYXVsdEFwcGxpY2F0aW9uIiwiaWQiOjEzNDgyLCJ1dWlkIjoiYjIwZWI3NWQtZDcxMS00MjJlLThlMzAtMWMzMzgwY2FlNzVjIn0sImlzcyI6Imh0dHBzOlwvXC9wb3J0YWlsLWFwaS5tZXRlb2ZyYW5jZS5mcjo0NDNcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6eyI1MFBlck1pbiI6eyJ0aWVyUXVvdGFUeXBlIjoicmVxdWVzdENvdW50IiwiZ3JhcGhRTE1heENvbXBsZXhpdHkiOjAsImdyYXBoUUxNYXhEZXB0aCI6MCwic3RvcE9uUXVvdGFSZWFjaCI6dHJ1ZSwic3Bpa2VBcnJlc3RMaW1pdCI6MCwic3Bpa2VBcnJlc3RVbml0Ijoic2VjIn19LCJrZXl0eXBlIjoiUFJPRFVDVElPTiIsInN1YnNjcmliZWRBUElzIjpbeyJzdWJzY3JpYmVyVGVuYW50RG9tYWluIjoiY2FyYm9uLnN1cGVyIiwibmFtZSI6IkRvbm5lZXNQdWJsaXF1ZXNDbGltYXRvbG9naWUiLCJjb250ZXh0IjoiXC9wdWJsaWNcL0RQQ2xpbVwvdjEiLCJwdWJsaXNoZXIiOiJhZG1pbl9tZiIsInZlcnNpb24iOiJ2MSIsInN1YnNjcmlwdGlvblRpZXIiOiI1MFBlck1pbiJ9XSwiZXhwIjoxODE2MjI3NzIyLCJ0b2tlbl90eXBlIjoiYXBpS2V5IiwiaWF0IjoxNzIxNTU0OTIyLCJqdGkiOiJjNzY1YTAyZi05ODBhLTQ3YzItODg3NC1hZTg4MWQxYzljZDEifQ==.b3D-oRfuTruX_IiujfZHcUSVGwfjqlKoIEy90O8V-8k8fu1qSriVU4OIyIlLmk-vVpjrl2VxELQA98_neylZ4vBLnyvLksCCy7rROknjMAMgzyYecZrqv6whoA2vs4rRG966tyfEF0Je7y_d7NTQcOGdU24KPEQ2WDYUl_i4tCvmFTqekBiXTmcpu9n2cxkQPXmpgQtMOB292lDhGaADhVTh3qe_uB_tu0KgT0biEaMcBwctyDrvS0Jc2MQbajWS8fwjeZEV3JoyeDZ0FgUMB5ulIXSZF9kcOGVzy6CSAjYTfe7DdYG82xg1Auujk1g5W12UDkjftZIL-Lhva1On8A=='
+    token = 'eyJ4NXQiOiJZV0kxTTJZNE1qWTNOemsyTkRZeU5XTTRPV014TXpjek1UVmhNbU14T1RSa09ETXlOVEE0Tnc9PSIsImtpZCI6ImdhdGV3YXlfY2VydGlmaWNhdGVfYWxpYXMiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJBbGVleFY2QGNhcmJvbi5zdXBlciIsImFwcGxpY2F0aW9uIjp7Im93bmVyIjoiQWxlZXhWNiIsInRpZXJRdW90YVR5cGUiOm51bGwsInRpZXIiOiJVbmxpbWl0ZWQiLCJuYW1lIjoiRGVmYXVsdEFwcGxpY2F0aW9uIiwiaWQiOjEzNDgyLCJ1dWlkIjoiYjIwZWI3NWQtZDcxMS00MjJlLThlMzAtMWMzMzgwY2FlNzVjIn0sImlzcyI6Imh0dHBzOlwvXC9wb3J0YWlsLWFwaS5tZXRlb2ZyYW5jZS5mcjo0NDNcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6eyI1MFBlck1pbiI6eyJ0aWVyUXVvdGFUeXBlIjoicmVxdWVzdENvdW50IiwiZ3JhcGhRTE1heENvbXBsZXhpdHkiOjAsImdyYXBoUUxNYXhEZXB0aCI6MCwic3RvcE9uUXVvdGFSZWFjaCI6dHJ1ZSwic3Bpa2VBcnJlc3RMaW1pdCI6MCwic3Bpa2VBcnJlc3RVbml0Ijoic2VjIn19LCJrZXl0eXBlIjoiUFJPRFVDVElPTiIsInN1YnNjcmliZWRBUElzIjpbeyJzdWJzY3JpYmVyVGVuYW50RG9tYWluIjoiY2FyYm9uLnN1cGVyIiwibmFtZSI6IkRvbm5lZXNQdWJsaXF1ZXNDbGltYXRvbG9naWUiLCJjb250ZXh0IjoiXC9wdWJsaWNcL0RQQ2xpbVwvdjEiLCJwdWJsaXNoZXIiOiJhZG1pbl9tZiIsInZlcnNpb24iOiJ2MSIsInN1YnNjcmlwdGlvblRpZXIiOiI1MFBlck1pbiJ9XSwiZXhwIjoxODE2Njc3NjY5LCJ0b2tlbl90eXBlIjoiYXBpS2V5IiwiaWF0IjoxNzIyMDA0ODY5LCJqdGkiOiI2NGU4NjNkNS00ZDFiLTQ2ZGYtYmRiMy0zNjVhMDk0NmYwOGEifQ==.OxxfBQKtIw6jgamL3lSnhYKB5wOfVDFlc86EfR3lbxRLWzF6TveUoIrDXTyfWwTIYQJG6R_FB1QSsjHNteNHBC2AteWxBFKjMp-q3Ff_K3IX9UdItYCWIF1J3qQYOWJXiYrsDG-UN3SGIVKL_yFPn6nlYqOFqsFO4bLIg7EJ0hjkCNa_CXpe2qVRuKWrVtcW8NNhNY51kY7-viyZg8hIu3P-IFbVn3Fezbbu949TlDlVa-BNGWvOyYiwGKKWmGJRlflgsAHhVZvxdq9vqfOVhkZyh5zkA9fs9rqe2PlEJY2XFrE0eOMIovjZXhxHftXcmaM79Wx9h8Wc77nLWkFwtA=='
     headers = {'apikey': token}
 
-    start = ['2012-01-01T00:00:00Z', '2013-01-01T00:00:00Z', '2014-01-01T00:00:00Z', '2015-01-01T00:00:00Z', '2016-01-01T00:00:00Z', '2017-01-01T00:00:00Z',
-            '2018-01-01T00:00:00Z', '2019-01-01T00:00:00Z', '2020-01-01T00:00:00Z', '2021-01-01T00:00:00Z', '2022-01-01T00:00:00Z', '2023-01-01T00:00:00Z']
-    end = ['2012-12-31T23:00:00Z', '2013-12-31T23:00:00Z', '2014-12-31T23:00:00Z', '2015-12-31T23:00:00Z', '2016-12-31T23:00:00Z', '2017-12-31T23:00:00Z',
-          '2018-12-31T23:00:00Z', '2019-12-31T23:00:00Z', '2020-12-31T23:00:00Z', '2021-12-31T23:00:00Z', '2022-12-31T23:00:00Z', '2023-12-31T23:00:00Z']
-    hdf = [34,46,48,65,66,81,82]
+    start = ['2000-01-01T00:00:00Z', '2001-01-01T00:00:00Z', '2002-01-01T00:00:00Z', '2003-01-01T00:00:00Z', '2004-01-01T00:00:00Z', '2005-01-01T00:00:00Z',
+            '2006-01-01T00:00:00Z', '2007-01-01T00:00:00Z', '2008-01-01T00:00:00Z', '2009-01-01T00:00:00Z', '2010-01-01T00:00:00Z', '2011-01-01T00:00:00Z']
+    end = ['2000-12-31T23:00:00Z', '2001-12-31T23:00:00Z', '2002-12-31T23:00:00Z', '2003-12-31T23:00:00Z', '2004-12-31T23:00:00Z', '2005-12-31T23:00:00Z',
+          '2006-12-31T23:00:00Z', '2007-12-31T23:00:00Z', '2008-12-31T23:00:00Z', '2009-12-31T23:00:00Z', '2010-12-31T23:00:00Z', '2011-12-31T23:00:00Z']
+    hdf = [1,3,7,15,26,38]#,42,43,63,69,73,74]
 
 
     list_hdf = []
@@ -76,5 +75,5 @@ if __name__ == '__main__':
         df = request_data(data[data['posteOuvert']]['id'], start, end)
         list_hdf.append(df)
     df_hdf = pd.concat(list_hdf).reset_index(drop=True)
-    df_hdf.to_csv('occitanie_2012_2023_2.csv')
+    df_hdf.to_csv('auvergne_ra_2000_2011_1.csv')
     print(df_hdf)
