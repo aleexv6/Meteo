@@ -163,3 +163,4 @@ cython_debug/
 *.grib2
 *.grib
 *.idx
+*.h5
