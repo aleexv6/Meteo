@@ -121,7 +121,7 @@ def create_map(df):
     plt.savefig(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}/{pd.to_datetime(date).day}.png")
 
 if __name__ == "__main__":
-    date = datetime.today().strftime('%Y-%m-%d') + 'T09:00:00Z'
+    date = datetime.today().strftime('%Y-%m-%d') + 'T03:00:00Z'
     base_path = "C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/arome_data"
     df = grib_to_dataframe(date, base_path)
     
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     departments = gpd.read_file('C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/geojsonfrance_corse_20.json')[['code', 'geometry']]
     departments['code'] = departments['code'].astype('int8')
     
-    final_df = departments.merge(df, how='left', left_on='code', right_on='DEPARTEMENT')
+    final_df = departments.merge(df_arome_and_historical, how='left', left_on='code', right_on='DEPARTEMENT')
     
     create_map(final_df)
     

@@ -164,3 +164,4 @@ cython_debug/
 *.grib
 *.idx
 *.h5
+*.png
