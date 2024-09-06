@@ -9,6 +9,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import geopandas as gpd
 from matplotlib.colors import ListedColormap, BoundaryNorm
+from discord_webhook import DiscordWebhook
 
 def grib_to_dataframe(date, base_path):
     directory = f"{base_path}/{date.replace(':', '-')}"
@@ -27,7 +28,8 @@ def grib_to_dataframe(date, base_path):
 
     ds = xr.merge(datasets)
     return ds.to_dataframe().reset_index()
-    
+
+
 def arome_mean_departement(dep_df, mean_arome_df):
     lst = []
     for i in dep_coords['Dep'].unique():
@@ -61,7 +63,7 @@ def dask_historical_data(csv_path):
     mean_historical = df_today_historical_plus_48h.groupby('DEPARTEMENT')['RR', 'TM'].mean(numeric_only=True)
     df_mean_historical = mean_historical.compute()
     return df_mean_historical.reset_index()
-    
+
 def create_map(df):
     #Colors for the persolised colormap
     tempcmp = np.array([[10/256, 0, 110/256, 1], [0,0,180/256,1], [0, 0, 255/256, 1], [28/256, 134/256, 238/256, 1], [0, 230/256, 240/256, 1], 
@@ -119,6 +121,7 @@ def create_map(df):
     if not os.path.isdir(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}"):
         os.mkdir(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}")
     plt.savefig(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}/{pd.to_datetime(date).day}.png")
+    plt.savefig(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/current.png")
 
 if __name__ == "__main__":
     date = datetime.today().strftime('%Y-%m-%d') + 'T03:00:00Z'
@@ -147,6 +150,10 @@ if __name__ == "__main__":
     
     create_map(final_df)
     
+    webhook = DiscordWebhook(url='https://discord.com/api/webhooks/1280887699678691429/r0Ac7MdbVsG3V1cftI6I0ASxCj1F8dmS-XdvkiiWu8-a2CLFBiXn2vlkVc3q7Q2iq3qG', username="Arome anomaly")
+    with open("C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/current.png", "rb") as f:
+        webhook.add_file(file=f.read(), filename="current.png")
+    response = webhook.execute()
     
     
     
