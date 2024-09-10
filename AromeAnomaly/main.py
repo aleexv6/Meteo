@@ -82,7 +82,10 @@ def create_map(df):
 
     #Boundaries for the cmap
     tempBoundaries = [-15, -10, -8, -4, -2, -1, 0, 1, 2, 4, 6, 10, 15]
-    precipBoundaries = [round(df['PrecipAnomaly%'].min(),0), 10, 20, 40, 60, 80, 100, 120, 150, 200, 250, 300, round(df['PrecipAnomaly%'].max(),0)]
+    min_precip = min(round(df['PrecipAnomaly%'].min(), 0), 0) #min anomaly or 0
+    max_precip = max(round(df['PrecipAnomaly%'].max(), 0), 300) #max anomaly or 300
+    precipBoundaries = [min_precip, 10, 20, 40, 60, 80, 100, 120, 150, 200, 250, 300, max_precip]
+    precipBoundaries = sorted(list(set(precipBoundaries))) #sort and remove duplicates
 
     # Colormap normalisation
     normTemp = BoundaryNorm(tempBoundaries, tempcmp.N)
