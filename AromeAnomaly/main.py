@@ -53,6 +53,15 @@ def arome_mean_departement(dep_df, mean_arome_df):
     
     return df_mean_arome
 
+def get_surf_rend_prod_data(year):
+    df = pd.read_csv('C:/Users/alexl/Documents/GitHub/agriApp/static/files/SCR-GRC-hist_dep_surface_prod_cult_cer-A24.csv', 
+                     encoding='ISO-8859-1', delimiter=';', decimal=',', usecols=['DEP', 'ESPECES', 'ANNEE', 'CULT_SURF', 'CULT_REND', 'CULT_PROD'], 
+                     dtype={'ANNEE': 'int32', 'CULT_SURF': 'float32', 'CULT_REND': 'float32', 'CULT_PROD': 'float32'})
+    df['DEP'] = df['DEP'].str.strip()
+    df['ESPECES'] = df['ESPECES'].str.rstrip()
+    df = df[(df['ESPECES'] == 'Blé tendre') | (df['ESPECES'] == 'Maïs (grain et semence)') | (df['ESPECES'] == 'Colza')]
+    return df[df['ANNEE'] == year]
+
 def dask_historical_data(csv_path):
     df = dd.read_csv(csv_path, usecols=['NUM_POSTE', 'DEPARTEMENT', 'ALTI', 'AAAAMMJJ', 'RR', 'TM'], dtype={'DEPARTEMENT':'int8','ALTI':'int32', 'RR':'float32', 'TM': 'float32'}, parse_dates=['AAAAMMJJ'])
     same_day_mask = (df['AAAAMMJJ'].dt.month == datetime.today().month) & (df['AAAAMMJJ'].dt.day == datetime.today().day)
@@ -127,6 +136,8 @@ def create_map(df):
     plt.savefig(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/current.png")
 
 if __name__ == "__main__":
+    df_srd = get_surf_rend_prod_data(2024)
+
     date = datetime.today().strftime('%Y-%m-%d') + 'T03:00:00Z'
     base_path = "C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/arome_data"
     df = grib_to_dataframe(date, base_path)
