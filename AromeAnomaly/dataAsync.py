@@ -36,5 +36,5 @@ async def download_grib_025(date):  # date format : 2024-08-26T06:00:00Z
 
 # Run the asynchronous function
 if __name__ == "__main__":
-    date = datetime.today().strftime('%Y-%m-%d') + 'T03:00:00Z'
+    date = datetime.today().strftime('%Y-%m-%d') + 'T00:00:00Z'
     asyncio.run(download_grib_025(date))

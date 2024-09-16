@@ -29,7 +29,6 @@ def grib_to_dataframe(date, base_path):
     ds = xr.merge(datasets)
     return ds.to_dataframe().reset_index()
 
-
 def arome_mean_departement(dep_df, mean_arome_df):
     lst = []
     for i in dep_coords['Dep'].unique():
@@ -57,10 +56,21 @@ def get_surf_rend_prod_data(year):
     df = pd.read_csv('C:/Users/alexl/Documents/GitHub/agriApp/static/files/SCR-GRC-hist_dep_surface_prod_cult_cer-A24.csv', 
                      encoding='ISO-8859-1', delimiter=';', decimal=',', usecols=['DEP', 'ESPECES', 'ANNEE', 'CULT_SURF', 'CULT_REND', 'CULT_PROD'], 
                      dtype={'ANNEE': 'int32', 'CULT_SURF': 'float32', 'CULT_REND': 'float32', 'CULT_PROD': 'float32'})
-    df['DEP'] = df['DEP'].str.strip()
+    df = df.rename(columns={'DEP': 'DEPARTEMENT'})
+    df['DEPARTEMENT'] = df['DEPARTEMENT'].str.strip()
     df['ESPECES'] = df['ESPECES'].str.rstrip()
     df = df[(df['ESPECES'] == 'Blé tendre') | (df['ESPECES'] == 'Maïs (grain et semence)') | (df['ESPECES'] == 'Colza')]
-    return df[df['ANNEE'] == year]
+    df = df[df['ANNEE'] == year].reset_index(drop=True)
+    #Corsica
+    corsica = df[(df['DEPARTEMENT'] == '2A') | (df['DEPARTEMENT'] == '2B')]
+    corsica_group = corsica.groupby('ESPECES')[['CULT_SURF']].mean().reset_index()
+    corsica_group['ANNEE'] = year
+    corsica_group['DEPARTEMENT'] = '20'
+    df_mean_corsica = pd.concat([df, corsica_group]).reset_index(drop=True)
+    df_mean_corsica = df_mean_corsica[~df_mean_corsica['DEPARTEMENT'].isin(['2A', '2B'])]
+    df_mean_corsica.loc[:, 'DEPARTEMENT'] = df_mean_corsica['DEPARTEMENT'].astype('int8')
+
+    return df_mean_corsica[['ESPECES', 'DEPARTEMENT', 'CULT_SURF']]
 
 def dask_historical_data(csv_path):
     df = dd.read_csv(csv_path, usecols=['NUM_POSTE', 'DEPARTEMENT', 'ALTI', 'AAAAMMJJ', 'RR', 'TM'], dtype={'DEPARTEMENT':'int8','ALTI':'int32', 'RR':'float32', 'TM': 'float32'}, parse_dates=['AAAAMMJJ'])
@@ -73,7 +83,17 @@ def dask_historical_data(csv_path):
     df_mean_historical = mean_historical.compute()
     return df_mean_historical.reset_index()
 
-def create_map(df):
+def temp_precip_weighted(df):
+    weighted = {}
+    for cult in weighted_df.columns[weighted_df.columns.str.startswith('CULT_SURF')]:
+        temp_sum = sum(t * s for t, s in zip(final_df['TmpAnomaly'], weighted_df[cult]))
+        temp_weighted = temp_sum / weighted_df[cult].sum()
+        precip_sum = sum(t * s for t, s in zip(final_df['PrecipAnomaly%'], weighted_df[cult]))
+        precip_weighted = precip_sum / weighted_df[cult].sum()
+        weighted[cult.replace("CULT_SURF ", "")] = [round(temp_weighted,2), round(precip_weighted,2)]
+    return weighted
+
+def create_map(df, wgt):
     #Colors for the persolised colormap
     tempcmp = np.array([[10/256, 0, 110/256, 1], [0,0,180/256,1], [0, 0, 255/256, 1], [28/256, 134/256, 238/256, 1], [0, 230/256, 240/256, 1], 
                         [156/256, 255/256, 255/256, 1], [255/256, 255/256, 156/256, 1], [255/256, 254/256, 0, 1], [255/256, 200/256, 0, 1], 
@@ -111,7 +131,13 @@ def create_map(df):
 
     # Set titles
     axes[0].set_title('Temp 2m(°C) Anomaly')
+    textTemp = f"Weighted surface:\nBlé tendre: {wgt['Blé tendre'][0]}\nMaïs: {wgt['Maïs (grain et semence)'][0]}\nColza: {wgt['Colza'][0]}"
+    axes[0].text(-4.8, 51.8, textTemp, transform=ccrs.PlateCarree(), fontsize=8,
+            verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.8))
     axes[1].set_title('Cumul. Precip.(%) Anomaly')
+    textPrecip = f"Weighted surface:\nBlé tendre: {wgt['Blé tendre'][1]}\nMaïs: {wgt['Maïs (grain et semence)'][1]}\nColza: {wgt['Colza'][1]}"
+    axes[1].text(-4.8, 51.8, textPrecip, transform=ccrs.PlateCarree(), fontsize=8,
+            verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.8))
 
     #Colormap and colorbar properties
     smTemp = plt.cm.ScalarMappable(cmap=tempcmp, norm=normTemp)
@@ -136,9 +162,10 @@ def create_map(df):
     plt.savefig(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/current.png")
 
 if __name__ == "__main__":
-    df_srd = get_surf_rend_prod_data(2024)
+    planted_year = 2024
+    df_srd = get_surf_rend_prod_data(planted_year)
 
-    date = datetime.today().strftime('%Y-%m-%d') + 'T03:00:00Z'
+    date = datetime.today().strftime('%Y-%m-%d') + 'T00:00:00Z'
     base_path = "C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/arome_data"
     df = grib_to_dataframe(date, base_path)
     
@@ -162,7 +189,18 @@ if __name__ == "__main__":
     
     final_df = departments.merge(df_arome_and_historical, how='left', left_on='code', right_on='DEPARTEMENT')
     
-    create_map(final_df)
+    ble_df = df_srd[df_srd['ESPECES'] == 'Blé tendre'].rename(columns={'CULT_SURF': 'CULT_SURF Blé tendre'})
+    mais_df = df_srd[df_srd['ESPECES'] == 'Maïs (grain et semence)'].rename(columns={'CULT_SURF': 'CULT_SURF Maïs (grain et semence)'})
+    colza_df = df_srd[df_srd['ESPECES'] == 'Colza'].rename(columns={'CULT_SURF': 'CULT_SURF Colza'})
+
+    weighted_df = final_df.merge(ble_df[['DEPARTEMENT', 'CULT_SURF Blé tendre']], on='DEPARTEMENT', how='left')
+    weighted_df = weighted_df.merge(colza_df[['DEPARTEMENT', 'CULT_SURF Colza']], on='DEPARTEMENT', how='left')
+    weighted_df = weighted_df.merge(mais_df[['DEPARTEMENT', 'CULT_SURF Maïs (grain et semence)']], on='DEPARTEMENT', how='left')
+    weighted_df = weighted_df.fillna(0)
+
+    wgt = temp_precip_weighted(weighted_df)
+
+    create_map(final_df, wgt)
     
     webhook = DiscordWebhook(url='https://discord.com/api/webhooks/1280887699678691429/r0Ac7MdbVsG3V1cftI6I0ASxCj1F8dmS-XdvkiiWu8-a2CLFBiXn2vlkVc3q7Q2iq3qG', username="Arome anomaly")
     with open("C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/current.png", "rb") as f:
