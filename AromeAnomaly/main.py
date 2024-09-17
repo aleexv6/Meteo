@@ -87,10 +87,12 @@ def temp_precip_weighted(df):
     weighted = {}
     for cult in weighted_df.columns[weighted_df.columns.str.startswith('CULT_SURF')]:
         temp_sum = sum(t * s for t, s in zip(final_df['TmpAnomaly'], weighted_df[cult]))
-        temp_weighted = temp_sum / weighted_df[cult].sum()
+        temp_weighted = round(temp_sum / weighted_df[cult].sum(), 2)
+        temp_weighted_str = f"+{temp_weighted}" if temp_weighted >= 0 else str(temp_weighted)
         precip_sum = sum(t * s for t, s in zip(final_df['PrecipAnomaly%'], weighted_df[cult]))
-        precip_weighted = precip_sum / weighted_df[cult].sum()
-        weighted[cult.replace("CULT_SURF ", "")] = [round(temp_weighted,2), round(precip_weighted,2)]
+        precip_weighted = round(precip_sum / weighted_df[cult].sum(), 2)
+        precip_weighted_str = f"+{precip_weighted}" if precip_weighted >= 0 else str(precip_weighted)
+        weighted[cult.replace("CULT_SURF ", "")] = [temp_weighted_str, precip_weighted_str]
     return weighted
 
 def create_map(df, wgt):
@@ -131,13 +133,19 @@ def create_map(df, wgt):
 
     # Set titles
     axes[0].set_title('Temp 2m(°C) Anomaly')
-    textTemp = f"Weighted surface:\nBlé tendre: {wgt['Blé tendre'][0]}\nMaïs: {wgt['Maïs (grain et semence)'][0]}\nColza: {wgt['Colza'][0]}"
+    textTemp = (r"$\mathbf{Weighted\ by\ crop\ surface:}$"  # raw string for bold text
+            f"\nBlé tendre: {wgt['Blé tendre'][0]}°C\n"
+            f"Maïs: {wgt['Maïs (grain et semence)'][0]}°C\n"
+            f"Colza: {wgt['Colza'][0]}°C")
     axes[0].text(-4.8, 51.8, textTemp, transform=ccrs.PlateCarree(), fontsize=8,
-            verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.8))
+            verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.95))
     axes[1].set_title('Cumul. Precip.(%) Anomaly')
-    textPrecip = f"Weighted surface:\nBlé tendre: {wgt['Blé tendre'][1]}\nMaïs: {wgt['Maïs (grain et semence)'][1]}\nColza: {wgt['Colza'][1]}"
+    textPrecip = (r"$\mathbf{Weighted\ by\ crop\ surface:}$"  # raw string for bold text
+            f"\nBlé tendre: {wgt['Blé tendre'][1]}%\n"
+            f"Maïs: {wgt['Maïs (grain et semence)'][1]}%\n"
+            f"Colza: {wgt['Colza'][1]}%")
     axes[1].text(-4.8, 51.8, textPrecip, transform=ccrs.PlateCarree(), fontsize=8,
-            verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.8))
+            verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.95))
 
     #Colormap and colorbar properties
     smTemp = plt.cm.ScalarMappable(cmap=tempcmp, norm=normTemp)
