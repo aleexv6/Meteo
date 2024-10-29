@@ -76,12 +76,15 @@ def dask_historical_data(csv_path):
     df = dd.read_csv(csv_path, usecols=['NUM_POSTE', 'DEPARTEMENT', 'ALTI', 'AAAAMMJJ', 'RR', 'TM'], dtype={'DEPARTEMENT':'int8','ALTI':'int32', 'RR':'float32', 'TM': 'float32'}, parse_dates=['AAAAMMJJ'])
     same_day_mask = (df['AAAAMMJJ'].dt.month == datetime.today().month) & (df['AAAAMMJJ'].dt.day == datetime.today().day)
     next_day_mask = (df['AAAAMMJJ'].dt.month == (datetime.today() + timedelta(days=1)).month) & (df['AAAAMMJJ'].dt.day == (datetime.today() + timedelta(days=1)).day)
-    two_days_after_mask = (df['AAAAMMJJ'].dt.month == (datetime.today() + timedelta(days=2)).month) & (df['AAAAMMJJ'].dt.day == (datetime.today() + timedelta(days=2)).day)
-    combined_mask = same_day_mask | next_day_mask | two_days_after_mask
+    combined_mask = same_day_mask | next_day_mask
     df_today_historical_plus_48h = df[combined_mask]
-    mean_historical = df_today_historical_plus_48h.groupby('DEPARTEMENT')['RR', 'TM'].mean(numeric_only=True)
-    df_mean_historical = mean_historical.compute()
-    return df_mean_historical.reset_index()
+    df_today_historical_plus_48h['Year'] = df_today_historical_plus_48h['AAAAMMJJ'].dt.year
+    df_today_historical_plus_48h = df_today_historical_plus_48h.compute()
+    RRdata = df_today_historical_plus_48h.groupby(['DEPARTEMENT', 'Year', 'NUM_POSTE'])['RR'].sum(numeric_only=True).reset_index() #group the two days together and sum them
+    RRdata = RRdata.groupby('DEPARTEMENT')['RR'].mean(numeric_only=True) #take the grouped sum of the two days for each stations and mean them
+    TMdata = df_today_historical_plus_48h.groupby('DEPARTEMENT')['TM'].mean(numeric_only=True)
+    mean_historical = pd.merge(RRdata, TMdata, left_index=True, right_index=True)
+    return mean_historical.reset_index()
 
 def temp_precip_weighted(df):
     weighted = {}
@@ -91,8 +94,7 @@ def temp_precip_weighted(df):
         temp_weighted_str = f"+{temp_weighted}" if temp_weighted >= 0 else str(temp_weighted)
         precip_sum = sum(t * s for t, s in zip(final_df['PrecipAnomaly%'], weighted_df[cult]))
         precip_weighted = round(precip_sum / weighted_df[cult].sum(), 2)
-        precip_weighted_str = f"+{precip_weighted}" if precip_weighted >= 0 else str(precip_weighted)
-        weighted[cult.replace("CULT_SURF ", "")] = [temp_weighted_str, precip_weighted_str]
+        weighted[cult.replace("CULT_SURF ", "")] = [temp_weighted_str, str(precip_weighted)]
     return weighted
 
 def create_map(df, wgt):
@@ -113,7 +115,7 @@ def create_map(df, wgt):
 
     #Boundaries for the cmap
     tempBoundaries = [-15, -10, -8, -4, -2, -1, 0, 1, 2, 4, 6, 10, 15]
-    min_precip = min(round(df['PrecipAnomaly%'].min(), 0), 0) #min anomaly or 0
+    min_precip = 0 #min precip anomaly is now always 0
     max_precip = max(round(df['PrecipAnomaly%'].max(), 0), 300) #max anomaly or 300
     precipBoundaries = [min_precip, 10, 20, 40, 60, 80, 100, 120, 150, 200, 250, 300, max_precip]
     precipBoundaries = sorted(list(set(precipBoundaries))) #sort and remove duplicates
@@ -176,8 +178,10 @@ if __name__ == "__main__":
     date = datetime.today().strftime('%Y-%m-%d') + 'T00:00:00Z'
     base_path = "C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/arome_data"
     df = grib_to_dataframe(date, base_path)
-    
-    mean_dsf = df.groupby(['latitude', 'longitude']).mean().reset_index()[['latitude', 'longitude', 't2m', 'tp']]
+
+    mean_t2m = df.groupby(['latitude', 'longitude']).mean().reset_index()[['latitude', 'longitude', 't2m']] #Arome mean temp for each lat lon
+    max_precip = df.groupby(['latitude', 'longitude']).max().reset_index()[['latitude', 'longitude', 'tp']] #Arome max precip for each lat lon
+    mean_dsf = pd.merge(mean_t2m, max_precip, on=['latitude', 'longitude'])
     mean_dsf['latitude'] = round(mean_dsf['latitude'], 3)
     mean_dsf['longitude'] = round(mean_dsf['longitude'], 3)
     
@@ -190,8 +194,11 @@ if __name__ == "__main__":
     df_arome_and_historical = pd.merge(df_arome_mean, df_historical, on=['DEPARTEMENT'], how='inner')
     df_arome_and_historical['TmpAnomaly'] = df_arome_and_historical['TmpMean'] - df_arome_and_historical['TM']
     df_arome_and_historical['PrecipAnomaly'] = df_arome_and_historical['PrecipMean'] - df_arome_and_historical['RR']
-    df_arome_and_historical['PrecipAnomaly%'] = round((((df_arome_and_historical['PrecipMean'] - df_arome_and_historical['RR']) / df_arome_and_historical['RR']) * 100), 2)
-    
+    df_arome_and_historical['PrecipAnomaly%'] = np.where(
+        df_arome_and_historical['PrecipMean'] == 0,
+        (0.001 / df_arome_and_historical['RR']) * 100,
+        (df_arome_and_historical['PrecipMean'] / df_arome_and_historical['RR']) * 100
+    )    
     departments = gpd.read_file('C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/geojsonfrance_corse_20.json')[['code', 'geometry']]
     departments['code'] = departments['code'].astype('int8')
     
