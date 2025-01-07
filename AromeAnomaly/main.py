@@ -10,24 +10,134 @@ import cartopy.feature as cfeature
 import geopandas as gpd
 from matplotlib.colors import ListedColormap, BoundaryNorm
 from discord_webhook import DiscordWebhook
+import config
+
+# def grib_to_dataframe(date, base_path):
+#     directory = f"{base_path}/{date.replace(':', '-')}"
+#     file_list = [os.path.join(directory, file.replace(':', '-')) for file in os.listdir(directory)]
+
+#     backend_kwargs = [
+#         {'filter_by_keys': {'paramId': 167, 'level': 2}},
+#         {'filter_by_keys': {'paramId': 228228}}
+#     ]
+
+#     datasets = []
+#     for file in file_list:
+#         for bk in backend_kwargs:
+#             ds = xr.open_dataset(file, engine='cfgrib', backend_kwargs=bk)
+#             coords_to_convert = ['latitude', 'longitude']
+#             for coord in coords_to_convert:
+#                 if coord in ds.coords and ds.coords[coord].dtype == 'float64':
+#                     ds.coords[coord] = ds.coords[coord].astype('float32')
+#             if 't2m' in ds.data_vars:
+#                 drop_list = ['time', 'valid_time', 'heightAboveGround']
+#             elif 'tp' in ds.data_vars:
+#                 drop_list = ['time', 'valid_time', 'surface']
+#             ds_reduced = ds.drop_vars(drop_list)
+#             datasets.append(ds_reduced)
+#     split = len(datasets) // 2
+#     ds1 = xr.merge(datasets[:split - 1])
+#     ds2 = xr.merge(datasets[split:])
+    
+#     ds = xr.merge([ds1, ds2])
+    
+#     return ds.to_dataframe().reset_index()[['latitude', 'longitude', 't2m', 'tp']]
 
 def grib_to_dataframe(date, base_path):
+    # Construct directory path
     directory = f"{base_path}/{date.replace(':', '-')}"
-    file_list = [os.path.join(directory, file.replace(':', '-')) for file in os.listdir(directory)]
-
+    
+    # Create file list with full paths
+    file_list = [os.path.join(directory, file.replace(':', '-')) 
+                 for file in os.listdir(directory)]
+    
+    # Define backend kwargs for different parameter sets
     backend_kwargs = [
         {'filter_by_keys': {'paramId': 167, 'level': 2}},
         {'filter_by_keys': {'paramId': 228228}}
     ]
+    
+    def process_single_dataset(file, bk):
+        """
+        Process a single GRIB dataset with memory-efficient techniques
+        """
+        try:
+            # Use dask for lazy loading to reduce memory pressure
+            ds = xr.open_dataset(file, engine='cfgrib', 
+                                 backend_kwargs=bk, 
+                                 chunks={'latitude': -1, 'longitude': -1})
+            
+            # Memory-efficient coordinate type conversion
+            coords_to_convert = ['latitude', 'longitude']
+            for coord in coords_to_convert:
+                if coord in ds.coords and ds.coords[coord].dtype == 'float64':
+                    ds.coords[coord] = ds.coords[coord].astype('float32')
+            
+            # Dynamically determine variables to drop
+            if 't2m' in ds.data_vars:
+                drop_list = ['time', 'valid_time', 'heightAboveGround']
+            elif 'tp' in ds.data_vars:
+                drop_list = ['time', 'valid_time', 'surface']
+            else:
+                drop_list = []
+            
+            # Drop unnecessary variables
+            ds_reduced = ds.drop_vars(drop_list) if drop_list else ds
+            
+            return ds_reduced
+        
+        except Exception as e:
+            print(f"Error processing file {file}: {e}")
+            return None
+    
+    def chunked_merge(datasets, chunk_size=4):
+        """
+        Merge datasets in smaller chunks to reduce memory pressure
+        """
+        # Remove None values
+        datasets = [ds for ds in datasets if ds is not None]
+        
+        final_merged_datasets = []
+        for i in range(0, len(datasets), chunk_size):
+            chunk = datasets[i:i+chunk_size]
+            try:
+                merged_chunk = xr.merge(chunk)
+                final_merged_datasets.append(merged_chunk)
+            except Exception as e:
+                print(f"Merge error in chunk {i}: {e}")
+        
+        # Final merge with error handling
+        try:
+            return xr.merge(final_merged_datasets)
+        except Exception as e:
+            print(f"Final merge error: {e}")
+            return None
+    
+    # Process all files and apply chunked merging
+    processed_datasets = [
+        process_single_dataset(file, bk) 
+        for file in file_list 
+        for bk in backend_kwargs
+    ]
+    
+    # Merge datasets
+    ds = chunked_merge(processed_datasets)
+    
+    if ds is None:
+        raise ValueError("Could not merge datasets")
+    
+    # Convert to DataFrame with error handling
+    try:
+        # Select only required columns and convert to pandas
+        df = ds.to_dataframe().reset_index()
+        
+        # Ensure only specific columns are returned
+        return df[['latitude', 'longitude', 't2m', 'tp']]
+    
+    except KeyError as e:
+        print(f"Missing columns: {e}")
+        return pd.DataFrame()
 
-    datasets = []
-    for file in file_list:
-        for bk in backend_kwargs:
-            ds = xr.open_dataset(file, engine='cfgrib', backend_kwargs=bk)
-            datasets.append(ds)
-
-    ds = xr.merge(datasets)
-    return ds.to_dataframe().reset_index()
 
 def arome_mean_departement(dep_df, mean_arome_df):
     lst = []
@@ -53,7 +163,7 @@ def arome_mean_departement(dep_df, mean_arome_df):
     return df_mean_arome
 
 def get_surf_rend_prod_data(year):
-    df = pd.read_csv('C:/Users/alexl/Documents/GitHub/agriApp/static/files/SCR-GRC-hist_dep_surface_prod_cult_cer-A24.csv', 
+    df = pd.read_csv(f'{config.FILEPATH}Meteo/AromeAnomaly/SCR-GRC-hist_dep_surface_prod_cult_cer-A25.csv', 
                      encoding='ISO-8859-1', delimiter=';', decimal=',', usecols=['DEP', 'ESPECES', 'ANNEE', 'CULT_SURF', 'CULT_REND', 'CULT_PROD'], 
                      dtype={'ANNEE': 'int32', 'CULT_SURF': 'float32', 'CULT_REND': 'float32', 'CULT_PROD': 'float32'})
     df = df.rename(columns={'DEP': 'DEPARTEMENT'})
@@ -91,7 +201,7 @@ def temp_precip_weighted(df):
     for cult in weighted_df.columns[weighted_df.columns.str.startswith('CULT_SURF')]:
         temp_sum = sum(t * s for t, s in zip(final_df['TmpAnomaly'], weighted_df[cult]))
         temp_weighted = round(temp_sum / weighted_df[cult].sum(), 2)
-        temp_weighted_str = f"+{temp_weighted}" if temp_weighted >= 0 else str(temp_weighted)
+        temp_weighted_str = f"+{temp_weighted:.2f}" if temp_weighted >= 0 else f"{temp_weighted:.2f}"
         precip_sum = sum(t * s for t, s in zip(final_df['PrecipAnomaly%'], weighted_df[cult]))
         precip_weighted = round(precip_sum / weighted_df[cult].sum(), 2)
         weighted[cult.replace("CULT_SURF ", "")] = [temp_weighted_str, str(precip_weighted)]
@@ -115,10 +225,11 @@ def create_map(df, wgt):
 
     #Boundaries for the cmap
     tempBoundaries = [-15, -10, -8, -4, -2, -1, 0, 1, 2, 4, 6, 10, 15]
-    min_precip = 0 #min precip anomaly is now always 0
+    min_precip = 0
     max_precip = max(round(df['PrecipAnomaly%'].max(), 0), 300) #max anomaly or 300
     precipBoundaries = [min_precip, 10, 20, 40, 60, 80, 100, 120, 150, 200, 250, 300, max_precip]
     precipBoundaries = sorted(list(set(precipBoundaries))) #sort and remove duplicates
+
 
     # Colormap normalisation
     normTemp = BoundaryNorm(tempBoundaries, tempcmp.N)
@@ -135,19 +246,19 @@ def create_map(df, wgt):
 
     # Set titles
     axes[0].set_title('Temp 2m(°C) Anomaly')
-    textTemp = (r"$\mathbf{Weighted\ by\ crop\ surface:}$"  # raw string for bold text
-            f"\nBlé tendre: {wgt['Blé tendre'][0]}°C\n"
-            f"Maïs: {wgt['Maïs (grain et semence)'][0]}°C\n"
-            f"Colza: {wgt['Colza'][0]}°C")
-    axes[0].text(-4.8, 51.8, textTemp, transform=ccrs.PlateCarree(), fontsize=8,
-            verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.95))
+    textTemp = (r"$\mathbf{Weighted\ by\ crop\ surface:}$"
+                f"\nBlé tendre: {wgt['Blé tendre'][0]}°C\n"
+                f"Maïs: {wgt['Maïs (grain et semence)'][0]}°C\n"
+                f"Colza: {wgt['Colza'][0]}°C")
+    axes[0].text(-4.8, 51.8, textTemp, transform=ccrs.PlateCarree(), fontsize=8, verticalalignment='top',
+                 horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.95))
     axes[1].set_title('Cumul. Precip.(%) Anomaly')
-    textPrecip = (r"$\mathbf{Weighted\ by\ crop\ surface:}$"  # raw string for bold text
-            f"\nBlé tendre: {wgt['Blé tendre'][1]}%\n"
-            f"Maïs: {wgt['Maïs (grain et semence)'][1]}%\n"
-            f"Colza: {wgt['Colza'][1]}%")
-    axes[1].text(-4.8, 51.8, textPrecip, transform=ccrs.PlateCarree(), fontsize=8,
-            verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.95))
+    textPrecip = (r"$\mathbf{Weighted\ by\ crop\ surface:}$"
+                  f"\nBlé tendre: {wgt['Blé tendre'][1]}%\n"
+                  f"Maïs: {wgt['Maïs (grain et semence)'][1]}%\n"
+                  f"Colza: {wgt['Colza'][1]}%")
+    axes[1].text(-4.8, 51.8, textPrecip, transform=ccrs.PlateCarree(), fontsize=8, verticalalignment='top',
+                 horizontalalignment='left', bbox=dict(facecolor='white', alpha=0.95))
 
     #Colormap and colorbar properties
     smTemp = plt.cm.ScalarMappable(cmap=tempcmp, norm=normTemp)
@@ -166,17 +277,17 @@ def create_map(df, wgt):
     plt.text(0.5, 0.94, 'Anomaly for the next 48h based on 1950-2022 historical data', ha='center', va='center', fontsize=8, transform=plt.gcf().transFigure)
     plt.subplots_adjust(wspace=0.1) 
 
-    if not os.path.isdir(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}"):
-        os.mkdir(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}")
-    plt.savefig(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}/{pd.to_datetime(date).day}.png")
-    plt.savefig(f"C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/current.png")
+    if not os.path.isdir(f"{config.FILEPATH}Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}"):
+        os.mkdir(f"{config.FILEPATH}Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}")
+    plt.savefig(f"{config.FILEPATH}Meteo/AromeAnomaly/img/{pd.to_datetime(date).year}-{pd.to_datetime(date).month}/{pd.to_datetime(date).day}.png")
+    plt.savefig(f"{config.FILEPATH}Meteo/AromeAnomaly/img/current.png")
 
 if __name__ == "__main__":
-    planted_year = 2024
+    planted_year = 2025
     df_srd = get_surf_rend_prod_data(planted_year)
 
     date = datetime.today().strftime('%Y-%m-%d') + 'T00:00:00Z'
-    base_path = "C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/arome_data"
+    base_path = f"{config.FILEPATH}Meteo/AromeAnomaly/arome_data"
     df = grib_to_dataframe(date, base_path)
 
     mean_t2m = df.groupby(['latitude', 'longitude']).mean().reset_index()[['latitude', 'longitude', 't2m']] #Arome mean temp for each lat lon
@@ -186,10 +297,12 @@ if __name__ == "__main__":
     mean_dsf['longitude'] = round(mean_dsf['longitude'], 3)
     
     dep_coords = pd.read_csv('coords_dep_0025.csv', low_memory=False)
+    dep_coords['latitude'] = dep_coords['latitude'].round(3).astype('float32')
+    dep_coords['longitude'] = dep_coords['longitude'].round(3).astype('float32')
     
     df_arome_mean = arome_mean_departement(dep_coords, mean_dsf)
     
-    df_historical = dask_historical_data('C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/meteo_france/RR_TM_ALTI/rr_tm_alti_1950_2022.csv')
+    df_historical = dask_historical_data(f'{config.FILEPATH}Meteo/AromeAnomaly/meteo_france/RR_TM_ALTI/rr_tm_alti_1950_2022.csv')
     
     df_arome_and_historical = pd.merge(df_arome_mean, df_historical, on=['DEPARTEMENT'], how='inner')
     df_arome_and_historical['TmpAnomaly'] = df_arome_and_historical['TmpMean'] - df_arome_and_historical['TM']
@@ -199,7 +312,7 @@ if __name__ == "__main__":
         (0.001 / df_arome_and_historical['RR']) * 100,
         (df_arome_and_historical['PrecipMean'] / df_arome_and_historical['RR']) * 100
     )    
-    departments = gpd.read_file('C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/geojsonfrance_corse_20.json')[['code', 'geometry']]
+    departments = gpd.read_file(f'{config.FILEPATH}Meteo/AromeAnomaly/geojsonfrance_corse_20.json')[['code', 'geometry']]
     departments['code'] = departments['code'].astype('int8')
     
     final_df = departments.merge(df_arome_and_historical, how='left', left_on='code', right_on='DEPARTEMENT')
@@ -214,12 +327,12 @@ if __name__ == "__main__":
     weighted_df = weighted_df.fillna(0)
 
     wgt = temp_precip_weighted(weighted_df)
-
+    
     create_map(final_df, wgt)
     
-    webhook = DiscordWebhook(url='https://discord.com/api/webhooks/1280887699678691429/r0Ac7MdbVsG3V1cftI6I0ASxCj1F8dmS-XdvkiiWu8-a2CLFBiXn2vlkVc3q7Q2iq3qG', username="Arome anomaly")
-    with open("C:/Users/alexl/Documents/GitHub/Meteo/AromeAnomaly/img/current.png", "rb") as f:
-        webhook.add_file(file=f.read(), filename="current.png")
+    webhook = DiscordWebhook(url=config.DiscordWebhookURL, username="Arome anomaly")
+    with open(f"{config.FILEPATH}Meteo/AromeAnomaly/img/current.png", "rb") as f:
+       webhook.add_file(file=f.read(), filename="current.png")
     response = webhook.execute()
     
     
