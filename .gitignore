@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 createFiles
 AgriModel
+*.hdf
 
 # C extensions
 *.so
