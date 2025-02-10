@@ -1,6 +1,8 @@
 from pyhdf.SD import SD, SDC
 import numpy as np
 import pyproj
+from cmr import GranuleQuery
+import os
 
 def parser(fileUrl):
     #Static values from MODIS documentation https://lpdaac.usgs.gov/products/mod13q1v061/ (Layers / Variables dropdown)
@@ -8,6 +10,7 @@ def parser(fileUrl):
     FILL_VALUE = -3000
     SCALE_FACTOR = 0.0001
     DATA_NAME = "250m 16 days EVI"
+    API = GranuleQuery()
 
     file = SD(fileUrl, SDC.READ) #pyhdf read file
 
@@ -46,5 +49,10 @@ def parser(fileUrl):
     sinu = pyproj.Proj(f"+proj=sinu +R={gridmeta["ProjParams"][0]} +nadgrids=@null +wktext") 
     wgs84 = pyproj.Proj("+init=EPSG:4326") 
     lon, lat= pyproj.transform(sinu, wgs84, xv, yv)
-    return dict(lons = lon, lats = lat, datas = data)
+    #find metadatas for file and add it to dict
+    granules = API.short_name("MOD13Q1").polygon([(-2, 47), (2, 42), (8, 45), (7, 52), (-2, 47)]).get()
+    filename = os.path.basename(fileUrl).replace('.hdf', '')
+    meta = [item for item in granules if item.get('title') == filename]
+    
+    return dict(lons = lon, lats = lat, datas = data, meta = meta)
 
