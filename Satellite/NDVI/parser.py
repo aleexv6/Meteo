@@ -4,7 +4,7 @@ import pyproj
 from cmr import GranuleQuery
 import os
 
-def parser(fileUrl):
+def parser(fileUrl, convertCoords=False):
     #Static values from MODIS documentation https://lpdaac.usgs.gov/products/mod13q1v061/ (Layers / Variables dropdown)
     VALID_RANGE = [-2000, 10000]
     FILL_VALUE = -3000
@@ -13,7 +13,6 @@ def parser(fileUrl):
     API = GranuleQuery()
 
     file = SD(fileUrl, SDC.READ) #pyhdf read file
-
     #Check for metadata in the file and make it a dict
     gridmeta = file.attributes()["StructMetadata.0"]
     gridmeta = dict([x.split("=") for x in gridmeta.split() if "=" in x])
@@ -34,25 +33,51 @@ def parser(fileUrl):
     data = data * SCALE_FACTOR #compute data with scale
     data = np.ma.masked_array(data, np.isnan(data)) #make masked_array of data
 
-    #grid from sinusoidal to cyl (latitude longitude)
-    x0 = gridmeta["UpperLeftPointMtrs"][0] #gridmeta is in meters
-    y0 = gridmeta["UpperLeftPointMtrs"][1]
-    x1 = gridmeta["LowerRightMtrs"][0]
-    y1 = gridmeta["LowerRightMtrs"][1]
-    nx, ny = data.shape
-    #linspace data then meshgrid to coordinates
-    x = np.linspace(x0, x1, nx, endpoint=False)
-    y = np.linspace(y0, y1, ny, endpoint=False)
-    xv, yv = np.meshgrid(x, y)
+    if convertCoords:
+        #grid from sinusoidal to cyl (latitude longitude)
+        x0 = gridmeta["UpperLeftPointMtrs"][0] #gridmeta is in meters
+        y0 = gridmeta["UpperLeftPointMtrs"][1]
+        x1 = gridmeta["LowerRightMtrs"][0]
+        y1 = gridmeta["LowerRightMtrs"][1]
+        nx, ny = data.shape
+        #linspace data then meshgrid to coordinates
+        x = np.linspace(x0, x1, nx, endpoint=False)
+        y = np.linspace(y0, y1, ny, endpoint=False)
+        xv, yv = np.meshgrid(x, y)
 
-    #NASA and HDFEOS code to transform sinu coords to WGS84 (lon, lat)
-    sinu = pyproj.Proj(f"+proj=sinu +R={gridmeta["ProjParams"][0]} +nadgrids=@null +wktext") 
-    wgs84 = pyproj.Proj("+init=EPSG:4326") 
-    lon, lat= pyproj.transform(sinu, wgs84, xv, yv)
+        #NASA and HDFEOS code to transform sinu coords to WGS84 (lon, lat)
+        sinu = pyproj.Proj(f"+proj=sinu +R={gridmeta["ProjParams"][0]} +nadgrids=@null +wktext") 
+        wgs84 = pyproj.Proj("+init=EPSG:4326") 
+        lon, lat= pyproj.transform(sinu, wgs84, xv, yv)
+    else:
+        lon = []
+        lat = []
     #find metadatas for file and add it to dict
     granules = API.short_name("MOD13Q1").polygon([(-2, 47), (2, 42), (8, 45), (7, 52), (-2, 47)]).get()
     filename = os.path.basename(fileUrl).replace('.hdf', '')
     meta = [item for item in granules if item.get('title') == filename]
     
     return dict(lons = lon, lats = lat, datas = data, meta = meta)
+
+def parse_data(fileUrl):
+    #Static values from MODIS documentation https://lpdaac.usgs.gov/products/mod13q1v061/ (Layers / Variables dropdown)
+    VALID_RANGE = [-2000, 10000]
+    FILL_VALUE = -3000
+    SCALE_FACTOR = 0.0001
+    DATA_NAME = "250m 16 days EVI"
+
+    file = SD(fileUrl, SDC.READ) #pyhdf read file
+
+    sds_obj = file.select(DATA_NAME) # select sds
+    data = sds_obj.get() # get sds data
+    data = data.astype(float) #convert data to float for masking with nans
+
+    #apply the attributes to the data for masking
+    invalid = np.logical_or(data < VALID_RANGE[0], data > VALID_RANGE[1]) #logical or (invalid is true or false with shape data)
+    invalid = np.logical_or(invalid, data == FILL_VALUE) #same but we had fill_value to filter
+    data[invalid] = np.nan #mask invalid values with nan 
+    data = data * SCALE_FACTOR #compute data with scale
+    data = np.ma.masked_array(data, np.isnan(data)) #make masked_array of data
+
+    return data
 
