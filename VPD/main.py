@@ -28,7 +28,10 @@ if __name__ == "__main__":
                     mean_datas = np.nanmean(datas) #ignore nan values
                 else:
                     mean_datas = np.nan
+                    max_data = np.nan
+                    min_data = np.nan
                 resList.append({"dep": indexes_dep["name"], "date": date.strftime("%Y-%m-%d"), "vpd": float(mean_datas)})
                 date = date + timedelta(days=1)
-        with open(f"{DATA_DOWNLOAD_URL}dailyDepMean/{indexes_dep["name"]}.json", "w") as outfile: #write file
+        with open(f"{DATA_DOWNLOAD_URL}dailyDepDatas/{indexes_dep['name']}.json", "w") as outfile: #write file
             outfile.write(json.dumps(resList))
+        print(indexes_dep["name"])
