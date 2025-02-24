@@ -20,7 +20,7 @@ for _, row in france.iterrows(): #loop throught each dep
         dep_geom = dep_crs.geometry.values #get new polygons values
         out_image, out_transform = mask(src, dep_geom, crop=True) #mask tif data with our polygon (our departement)
         out_image[out_image == fill_value] = np.nan #replace fill_values with nan 
-        res.append({"nom": row["nom"], "vpd": float(np.nanmean(out_image))}) #make a dict with mean values for this departement (ignoring nan values)
+        res.append({"nom": row["nom"], "awc": float(np.nanmean(out_image))}) #make a dict with mean values for this departement (ignoring nan values)
 
 with open(f"{DATA_DOWNLOAD_URL}/AWC.json", "w") as outfile: #make a json file with output data
     outfile.write(json.dumps(res))
