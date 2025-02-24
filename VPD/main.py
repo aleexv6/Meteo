@@ -26,11 +26,13 @@ if __name__ == "__main__":
                 if indexes_dep["valid_index"]: #check if there is at least an index for this dep
                     datas = data_flatten[indexes_dep["valid_index"]] #get data from index
                     mean_datas = np.nanmean(datas) #ignore nan values
+                    max_data = np.nanmax(datas)
+                    min_data = np.nanmin(datas)
                 else:
                     mean_datas = np.nan
                     max_data = np.nan
                     min_data = np.nan
-                resList.append({"dep": indexes_dep["name"], "date": date.strftime("%Y-%m-%d"), "vpd": float(mean_datas)})
+                resList.append({"dep": indexes_dep["name"], "date": date.strftime("%Y-%m-%d"), "vpd_max": float(max_data), "vpd_min": float(min_data), "vpd_mean": float(mean_datas)})
                 date = date + timedelta(days=1)
         with open(f"{DATA_DOWNLOAD_URL}dailyDepDatas/{indexes_dep['name']}.json", "w") as outfile: #write file
             outfile.write(json.dumps(resList))
