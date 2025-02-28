@@ -39,4 +39,4 @@ def last_data(dl_url, api=API, headers=HEADERS):
             print(f"Error downloading {gr["title"]}")
 
 if __name__ == "__main__":
-    historical_data(DATA_DOWNLOAD_URL)
+    last_data(DATA_DOWNLOAD_URL)
