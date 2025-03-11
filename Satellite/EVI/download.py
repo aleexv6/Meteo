@@ -18,9 +18,9 @@ def historical_data(dl_url, api=API, headers=HEADERS):
         for g in dateGranules: #loop throught every data and save hdf file
             try:
                 r = requests.get(g['links'][0]['href'], headers=headers)
-                open(f"{dl_url}/{formattedDate}/{g["title"]}.hdf", "wb").write(r.content)
+                open(f"{dl_url}/{formattedDate}/{g['title']}.hdf", "wb").write(r.content)
             except:
-                print(f"Error downloading {g["title"]}")
+                print(f"Error downloading {g['title']}")
                 return
 
 def last_data(dl_url, api=API, headers=HEADERS):
@@ -34,9 +34,9 @@ def last_data(dl_url, api=API, headers=HEADERS):
     for gr in lastGranules: #loop throught data and save hdf file
         try:
             r = requests.get(gr['links'][0]['href'], headers=headers)
-            open(f"{dl_url}/{endDate}/{gr["title"]}.hdf", "wb").write(r.content)
+            open(f"{dl_url}/{endDate}/{gr['title']}.hdf", "wb").write(r.content)
         except:
-            print(f"Error downloading {gr["title"]}")
+            print(f"Error downloading {gr['title']}")
 
 if __name__ == "__main__":
     last_data(DATA_DOWNLOAD_URL)
