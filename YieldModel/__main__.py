@@ -44,7 +44,7 @@ def set_up_parser():
     # I/O arguments
     parser.add_argument(
         '-i', '--input-file',
-        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_dataset_1980_2018.csv'),
+        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_current.csv'),
         help='input dataset for yield prediction')
     parser.add_argument(
         '-o', '--output-dir',
@@ -74,11 +74,11 @@ def set_up_parser():
         help='year to end training with')
     parser.add_argument(
         '--start-test-year',
-        default=2004, type=int,
+        default=2005, type=int,
         help='year to start testing from')
     parser.add_argument(
         '--end-test-year',
-        default=2017, type=int,
+        default=2018, type=int,
         help='year to end testing with')
 
     # Hyperparameters
@@ -138,6 +138,7 @@ def main(args):
     """
     # Read in the dataset
     input_data = read_dataset(args.input_file, args.verbose)
+    input_data = input_data.drop("Unnamed: 0", axis=1)
 
     output_data = input_data.copy()
 
@@ -226,6 +227,17 @@ def main(args):
             print_statistics(yearly_stats[year]['test'])
 
         save_predictions(output_data, predictions, year)
+
+
+    current_data = input_data[input_data["year"] == 2025]
+    drop_cols(current_data)
+    current_data = current_data.drop(["yield", "year"], axis=1)
+    drop_nans(current_data)
+    current_dep = current_data.pop("DEP")
+
+
+    #TO DO : annual trend, annual trend and standardization of current data before predicting
+    predictions = model.predict(current_data)
 
     # Evaluate the overall performance
     drop_cols(output_data)

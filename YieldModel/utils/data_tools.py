@@ -242,6 +242,19 @@ def standardize(train_X, test_X):
 
     return train_X, test_X
 
+def standardize_current_data(current_data):
+    """same but for current data
+    """
+    scaler = sklearn.preprocessing.StandardScaler()
+
+    # Compute the mean and standard deviation of the training set
+    scaler.fit(current_data.loc[:, 'RR1':'awc'])
+
+    # Transform the current set
+    current_data.loc[:, 'RR1':'awc'] = scaler.transform(
+        current_data.loc[:, 'RR1':'awc'])
+
+    return current_data
 
 def array_to_series(predictions, index):
     """Converts an array of predictions to a Series.
