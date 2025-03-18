@@ -164,7 +164,7 @@ def arome_mean_departement(dep_df, mean_arome_df):
 
 def get_surf_rend_prod_data(year):
     df = pd.read_csv(f'{config.FILEPATH}Meteo/AromeAnomaly/SCR-GRC-hist_dep_surface_prod_cult_cer-A25.csv', 
-                     encoding='ISO-8859-1', delimiter=';', decimal=',', usecols=['DEP', 'ESPECES', 'ANNEE', 'CULT_SURF', 'CULT_REND', 'CULT_PROD'], 
+                     encoding='utf-8', usecols=['DEP', 'ESPECES', 'ANNEE', 'CULT_SURF', 'CULT_REND', 'CULT_PROD'], 
                      dtype={'ANNEE': 'int32', 'CULT_SURF': 'float32', 'CULT_REND': 'float32', 'CULT_PROD': 'float32'})
     df = df.rename(columns={'DEP': 'DEPARTEMENT'})
     df['DEPARTEMENT'] = df['DEPARTEMENT'].str.strip()

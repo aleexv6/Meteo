@@ -44,7 +44,7 @@ def set_up_parser():
     # I/O arguments
     parser.add_argument(
         '-i', '--input-file',
-        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_current.csv'),
+        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_dataset_1980_2018.csv'),
         help='input dataset for yield prediction')
     parser.add_argument(
         '-o', '--output-dir',
@@ -138,7 +138,6 @@ def main(args):
     """
     # Read in the dataset
     input_data = read_dataset(args.input_file, args.verbose)
-    input_data = input_data.drop("Unnamed: 0", axis=1)
 
     output_data = input_data.copy()
 
@@ -198,9 +197,10 @@ def main(args):
         predictions = model.predict(train_X)
 
         train_y, predictions = reapply_county_fixed_effect(
-            train_y, predictions, train_dep, county_fixed_effect)
+            train_y, predictions, train_dep, county_fixed_effect, year)
+        
         train_y, predictions = reapply_annual_trend(
-            train_y, predictions, train_years, annual_model)
+            train_y, predictions, train_years, annual_model, year)
 
         # Evaluate the performance
         yearly_stats[year]['train'] = \
@@ -216,10 +216,10 @@ def main(args):
         predictions = model.predict(test_X)
 
         test_y, predictions = reapply_county_fixed_effect(
-            test_y, predictions, test_dep, county_fixed_effect)
+            test_y, predictions, test_dep, county_fixed_effect, year)
         test_y, predictions = reapply_annual_trend(
-            test_y, predictions, test_years, annual_model)
-
+            test_y, predictions, test_years, annual_model, year)
+        
         # Evaluate the performance
         yearly_stats[year]['test'] = calculate_statistics(test_y, predictions)
 
@@ -228,19 +228,8 @@ def main(args):
 
         save_predictions(output_data, predictions, year)
 
-
-    current_data = input_data[input_data["year"] == 2025]
-    drop_cols(current_data)
-    current_data = current_data.drop(["yield", "year"], axis=1)
-    drop_nans(current_data)
-    current_dep = current_data.pop("DEP")
-
-
-    #TO DO : annual trend, annual trend and standardization of current data before predicting
-    predictions = model.predict(current_data)
-
     # Evaluate the overall performance
-    drop_cols(output_data)
+    #drop_cols(output_data)
     drop_nans(output_data)
 
     labels = output_data['yield']
@@ -258,8 +247,36 @@ def main(args):
     write_performance(args.output_dir, args.model, args.ridge_lasso_alpha,
                       args.svr_kernel, args.svr_gamma, args.svr_c,
                       args.svr_epsilon, overall_stats, args.verbose)
-
+    
+    output_data['predicted production'] = output_data['predicted yield'] * output_data['area']
+    
     plot_yields(output_data, args.output_dir, args.model)
+
+    current_data = pd.read_csv(os.path.join(os.path.realpath(sys.path[0]), 'data', 'wheat_model_current.csv'),)
+    current_data = current_data.drop("Unnamed: 0", axis=1)
+    current_year = current_data.pop("year")
+    current_deps = current_data.pop("DEP")
+    current_surf = current_data.pop("CULT_SURF")
+
+    current_X = standardize_current(current_data)
+
+    predictions = model.predict(current_X)
+
+    predictions = reapply_current_county_fixed_effect(
+            predictions, current_deps, county_fixed_effect)
+    
+    predictions = reapply_current_annual_trend(predictions, current_year, annual_model)
+
+    predictions = predictions.rename_axis('DEP').reset_index(name='predicted yield')
+    output_current = pd.DataFrame(predictions)
+    output_current['year'] = current_year   
+    output_current['area'] = current_surf
+
+    output_current['predicted current production'] = output_current['predicted yield'] * output_current['area']
+
+    plot_current_yields(output_data, args.output_dir, output_current, args.model)
+    plot_production(output_data, args.output_dir, args.model)
+    plot_current_production(output_data, args.output_dir, output_current, args.model)
 
 if __name__ == '__main__':
     # Parse supplied arguments

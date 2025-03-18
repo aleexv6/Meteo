@@ -171,7 +171,7 @@ def print_overall_statistics(overall_stats, verbose=3):
 
 def plot_yields(df, output_dir, model):
     """
-    Create a scatter plot comparing actual and predicted yields over time.
+    Create a scatter plot comparing actual and predicted yield over time.
     
     Parameters:
     df (pandas.DataFrame): DataFrame with columns 'date', 'yield', and 'predicted_yield'
@@ -208,5 +208,154 @@ def plot_yields(df, output_dir, model):
     
     dirname = os.path.join(output_dir, model)
     filename = os.path.join(dirname, 'performance.png')
+
+    plt.savefig(filename)
+
+def plot_production(df, output_dir, model):
+    """
+    Create a scatter plot comparing actual and predicted production over time.
+    
+    Parameters:
+    df (pandas.DataFrame): DataFrame with columns 'date', 'yield', and 'predicted_yield'
+    """
+    franceTotalProduction = df[["year", "production", "predicted production"]].groupby(["year"]).sum()
+
+    # Create the figure and axis
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Plot actual yields
+    ax.scatter(franceTotalProduction.index, franceTotalProduction['production'] / 1000000, #convert to million tonnes
+              label='Actual Production', 
+              color='blue', 
+              alpha=0.6,
+              s=100)
+    
+    # Plot predicted yields
+    ax.scatter(franceTotalProduction.index, franceTotalProduction['predicted production'] / 1000000, #convert to million tonnes
+              label='Predicted Production', 
+              color='red', 
+              alpha=0.6,
+              s=100)
+    
+    # Customize the plot
+    ax.set_title('Actual vs Predicted Production (Million Metric Tonnes)', fontsize=14, pad=20)
+    ax.set_xlabel('Year', fontsize=12)
+    ax.set_ylabel('Production (Million MT)', fontsize=12)
+
+    # Add legend
+    ax.legend()
+    
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
+    
+    dirname = os.path.join(output_dir, model)
+    filename = os.path.join(dirname, 'production.png')
+
+    plt.savefig(filename)
+
+def plot_current_yields(df, output_dir, output_current, model):
+    """
+    Create a scatter plot comparing actual and predicted yields over time and adding the current predicted yield.
+    
+    Parameters:
+    df (pandas.DataFrame): DataFrame with columns 'date', 'yield', and 'predicted_yield'
+    """
+    franceTotalYields = df[["year", "yield", "predicted yield"]].groupby(["year"]).sum()
+    franceCurrentTotalYields = output_current[["predicted yield", "year"]].groupby(["year"]).sum()
+
+    # Create the figure and axis
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Plot actual yields
+    ax.scatter(franceTotalYields.index, franceTotalYields['yield'], 
+              label='Actual Yield', 
+              color='blue', 
+              alpha=0.6,
+              s=100)
+    
+    # Plot predicted yields
+    ax.scatter(franceTotalYields.index, franceTotalYields['predicted yield'], 
+              label='Predicted Yield', 
+              color='red', 
+              alpha=0.6,
+              s=100)
+    
+    ax.scatter(franceCurrentTotalYields.index, franceCurrentTotalYields['predicted yield'], 
+              label='This year predicted yield', 
+              color='green', 
+              alpha=0.6,
+              s=100)
+    
+    # Customize the plot
+    all_years = sorted(set(list(franceTotalYields.index) + list(franceCurrentTotalYields.index)))
+    ax.set_xticks(all_years)
+    ax.set_xticklabels([str(int(year)) for year in all_years])
+    ax.set_title('Actual vs Predicted Yields (kg/ha)', fontsize=14, pad=20)
+    ax.set_xlabel('Date', fontsize=12)
+    ax.set_ylabel('Yield', fontsize=12)
+
+    # Add legend
+    ax.legend()
+    
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
+    
+    dirname = os.path.join(output_dir, model)
+    filename = os.path.join(dirname, 'performance_and_current.png')
+
+    plt.savefig(filename)
+
+def plot_current_production(df, output_dir, output_current, model):
+    """
+    Create a scatter plot comparing actual and predicted production over time and adding the current predicted production.
+    
+    Parameters:
+    df (pandas.DataFrame): DataFrame with columns 'date', 'yield', and 'predicted_production'
+    """
+    franceTotalProduction = df[["year", "production", "predicted production"]].groupby(["year"]).sum()
+    franceCurrentTotalProduction = output_current[["predicted current production", "year"]].groupby(["year"]).sum()
+
+    # Create the figure and axis
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Plot actual yields
+    ax.scatter(franceTotalProduction.index, franceTotalProduction['production'] / 1000000,  #convert to million tonnes
+              label='Actual production', 
+              color='blue', 
+              alpha=0.6,
+              s=100)
+    
+    # Plot predicted yields
+    ax.scatter(franceTotalProduction.index, franceTotalProduction['predicted production'] / 1000000, #convert to million tonnes
+              label='Predicted production', 
+              color='red', 
+              alpha=0.6,
+              s=100)
+    
+    ax.scatter(franceCurrentTotalProduction.index, franceCurrentTotalProduction['predicted current production'] / 1000000, #convert to million tonnes
+              label='This year predicted production', 
+              color='green', 
+              alpha=0.6,
+              s=100)
+    
+    # Customize the plot
+    all_years = sorted(set(list(franceTotalProduction.index) + list(franceCurrentTotalProduction.index)))
+    ax.set_xticks(all_years)
+    ax.set_xticklabels([str(int(year)) for year in all_years])
+    ax.set_title('Actual vs Predicted French Wheat Production (Million Metric Tonnes)', fontsize=14, pad=20)
+    ax.set_xlabel('Year', fontsize=12)
+    ax.set_ylabel('Production (Million MT)', fontsize=12)
+
+    plt.figtext(0.7, 0.15, f"2025 Predicted production : {franceCurrentTotalProduction['predicted current production'].values[0] / 1000000:.3f} Million MT", 
+           bbox=dict(facecolor='white', alpha=0.8))
+
+    # Add legend
+    ax.legend()
+    
+    # Adjust layout to prevent label cutoff
+    plt.tight_layout()
+    
+    dirname = os.path.join(output_dir, model)
+    filename = os.path.join(dirname, 'production_and_current.png')
 
     plt.savefig(filename)

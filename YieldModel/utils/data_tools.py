@@ -127,7 +127,7 @@ def remove_annual_trend(train_data, test_data, jobs=-1):
     return train_data, train_years, test_data, test_years, model
 
 
-def reapply_annual_trend(labels, predictions, years, model):
+def reapply_annual_trend(labels, predictions, years, model, year):
     """Re-applies the annual yield trend.
 
     Parameters:
@@ -140,6 +140,7 @@ def reapply_annual_trend(labels, predictions, years, model):
         pandas.Series: the ground truth labels
         pandas.Series: the predicted labels
     """
+
     annual_trend = model.predict(years.values.reshape(-1, 1))
 
     labels += annual_trend
@@ -147,7 +148,21 @@ def reapply_annual_trend(labels, predictions, years, model):
 
     predictions = predictions.clip(lower=0)
 
+
     return labels, predictions
+
+def reapply_current_annual_trend(predictions, year, model):
+    """Re-applies the current annual yield trend.
+    """
+
+    annual_trend = model.predict(year.values.reshape(-1, 1))
+
+    predictions += annual_trend
+
+    predictions = predictions.clip(lower=0)
+
+
+    return predictions
 
 
 def remove_county_fixed_effect(train_data, test_data):
@@ -166,6 +181,8 @@ def remove_county_fixed_effect(train_data, test_data):
     """
     dep_groups = train_data.groupby('DEP')
     county_fixed_effect = dep_groups['yield'].aggregate(['mean', 'std'])
+
+
 
     # Counties that only appear once in training set have NaN std dev
     # Impossible to learn county fixed effect
@@ -190,7 +207,7 @@ def remove_county_fixed_effect(train_data, test_data):
 
 
 def reapply_county_fixed_effect(labels, predictions, dep,
-                                county_fixed_effect):
+                                county_fixed_effect, year):
     """Re-applies the county fixed effect.
 
     Parameters:
@@ -204,6 +221,7 @@ def reapply_county_fixed_effect(labels, predictions, dep,
         pandas.Series: the ground truth labels
         pandas.Series: the predicted labels
     """
+
     predictions = array_to_series(predictions, labels.index)
 
     labels *= county_fixed_effect.loc[dep, 'std'].values
@@ -214,6 +232,17 @@ def reapply_county_fixed_effect(labels, predictions, dep,
 
     return labels, predictions
 
+def reapply_current_county_fixed_effect(predictions, dep,
+                                county_fixed_effect):
+    """Re-applies the current county fixed effect.
+    """
+
+    predictions = pd.Series(predictions, index=dep)
+
+    predictions *= county_fixed_effect.loc[dep, 'std'].values
+    predictions += county_fixed_effect.loc[dep, 'mean'].values
+
+    return predictions
 
 def standardize(train_X, test_X):
     """Standardizes the dataset.
@@ -242,19 +271,19 @@ def standardize(train_X, test_X):
 
     return train_X, test_X
 
-def standardize_current_data(current_data):
-    """same but for current data
+def standardize_current(current_X):
+    """Standardizes the current dataset.
     """
     scaler = sklearn.preprocessing.StandardScaler()
 
     # Compute the mean and standard deviation of the training set
-    scaler.fit(current_data.loc[:, 'RR1':'awc'])
+    #scaler.fit(train_X.loc[:, 'RR1':'awc'])
+    scaler.fit(current_X.loc[:, 'RR1':'awc'])
 
-    # Transform the current set
-    current_data.loc[:, 'RR1':'awc'] = scaler.transform(
-        current_data.loc[:, 'RR1':'awc'])
+    current_X.loc[:, 'RR1':'awc'] = scaler.transform(
+        current_X.loc[:, 'RR1':'awc'])
 
-    return current_data
+    return current_X
 
 def array_to_series(predictions, index):
     """Converts an array of predictions to a Series.
