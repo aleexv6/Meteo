@@ -13,7 +13,7 @@ def drop_cols(data):
         data (pandas.DataFrame): the entire dataset
     """
     labels = [
-        'department', 'production',
+        'production',
         'area', 'MY'
     ]
 

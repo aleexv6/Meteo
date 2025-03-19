@@ -44,7 +44,7 @@ def set_up_parser():
     # I/O arguments
     parser.add_argument(
         '-i', '--input-file',
-        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_dataset_1980_2018.csv'),
+        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_dataset_1980_2024.csv'),
         help='input dataset for yield prediction')
     parser.add_argument(
         '-o', '--output-dir',
@@ -70,15 +70,15 @@ def set_up_parser():
         help='year to start training from')
     parser.add_argument(
         '--end-train-year',
-        default=2017, type=int,
+        default=2018, type=int,
         help='year to end training with')
     parser.add_argument(
         '--start-test-year',
-        default=2005, type=int,
+        default=2019, type=int,
         help='year to start testing from')
     parser.add_argument(
         '--end-test-year',
-        default=2018, type=int,
+        default=2024, type=int,
         help='year to end testing with')
 
     # Hyperparameters
@@ -166,7 +166,7 @@ def main(args):
         # Remove the county fixed effect
         train_data, train_dep, test_data, test_dep, county_fixed_effect = \
             remove_county_fixed_effect(train_data, test_data)
-
+        
         # Remove data that we don't want to train on
         drop_cols(train_data)
         drop_cols(test_data)
