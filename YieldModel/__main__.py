@@ -44,7 +44,7 @@ def set_up_parser():
     # I/O arguments
     parser.add_argument(
         '-i', '--input-file',
-        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_dataset_1980_2024.csv'),
+        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_dataset_1900_2024.csv'),
         help='input dataset for yield prediction')
     parser.add_argument(
         '-o', '--output-dir',
@@ -70,15 +70,15 @@ def set_up_parser():
         help='year to start training from')
     parser.add_argument(
         '--end-train-year',
-        default=2018, type=int,
+        default=2014, type=int,
         help='year to end training with')
     parser.add_argument(
         '--start-test-year',
-        default=2019, type=int,
+        default=2015, type=int,
         help='year to start testing from')
     parser.add_argument(
         '--end-test-year',
-        default=2024, type=int,
+        default=2020, type=int,
         help='year to end testing with')
 
     # Hyperparameters
