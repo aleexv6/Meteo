@@ -44,7 +44,7 @@ def set_up_parser():
     # I/O arguments
     parser.add_argument(
         '-i', '--input-file',
-        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_dataset_1900_2024.csv'),
+        default=os.path.join(ROOT_DIRECTORY, 'data', 'daily_wheat_model_dataset_1980-2024.csv'),
         help='input dataset for yield prediction')
     parser.add_argument(
         '-o', '--output-dir',
@@ -70,15 +70,15 @@ def set_up_parser():
         help='year to start training from')
     parser.add_argument(
         '--end-train-year',
-        default=2014, type=int,
+        default=2018, type=int,
         help='year to end training with')
     parser.add_argument(
         '--start-test-year',
-        default=2015, type=int,
+        default=2019, type=int,
         help='year to start testing from')
     parser.add_argument(
         '--end-test-year',
-        default=2020, type=int,
+        default=2024, type=int,
         help='year to end testing with')
 
     # Hyperparameters
@@ -252,31 +252,31 @@ def main(args):
     
     plot_yields(output_data, args.output_dir, args.model)
 
-    current_data = pd.read_csv(os.path.join(os.path.realpath(sys.path[0]), 'data', 'wheat_model_current.csv'),)
-    current_data = current_data.drop("Unnamed: 0", axis=1)
-    current_year = current_data.pop("year")
-    current_deps = current_data.pop("DEP")
-    current_surf = current_data.pop("CULT_SURF")
+    # current_data = pd.read_csv(os.path.join(os.path.realpath(sys.path[0]), 'data', 'wheat_model_current.csv'),)
+    # current_data = current_data.drop("Unnamed: 0", axis=1)
+    # current_year = current_data.pop("year")
+    # current_deps = current_data.pop("DEP")
+    # current_surf = current_data.pop("CULT_SURF")
 
-    current_X = standardize_current(current_data)
+    # current_X = standardize_current(current_data)
 
-    predictions = model.predict(current_X)
+    # predictions = model.predict(current_X)
 
-    predictions = reapply_current_county_fixed_effect(
-            predictions, current_deps, county_fixed_effect)
+    # predictions = reapply_current_county_fixed_effect(
+    #         predictions, current_deps, county_fixed_effect)
     
-    predictions = reapply_current_annual_trend(predictions, current_year, annual_model)
+    # predictions = reapply_current_annual_trend(predictions, current_year, annual_model)
 
-    predictions = predictions.rename_axis('DEP').reset_index(name='predicted yield')
-    output_current = pd.DataFrame(predictions)
-    output_current['year'] = current_year   
-    output_current['area'] = current_surf
+    # predictions = predictions.rename_axis('DEP').reset_index(name='predicted yield')
+    # output_current = pd.DataFrame(predictions)
+    # output_current['year'] = current_year   
+    # output_current['area'] = current_surf
 
-    output_current['predicted current production'] = output_current['predicted yield'] * output_current['area']
+    # output_current['predicted current production'] = output_current['predicted yield'] * output_current['area']
 
-    plot_current_yields(output_data, args.output_dir, output_current, args.model)
+    #plot_current_yields(output_data, args.output_dir, output_current, args.model)
     plot_production(output_data, args.output_dir, args.model)
-    plot_current_production(output_data, args.output_dir, output_current, args.model)
+    #plot_current_production(output_data, args.output_dir, output_current, args.model)
 
 if __name__ == '__main__':
     # Parse supplied arguments

@@ -261,13 +261,13 @@ def standardize(train_X, test_X):
     scaler = sklearn.preprocessing.StandardScaler()
 
     # Compute the mean and standard deviation of the training set
-    scaler.fit(train_X.loc[:, 'RR1':'awc'])
+    scaler.fit(train_X.loc[:, 'RR01-01':'awc'])
 
     # Transform the training and testing sets
-    train_X.loc[:, 'RR1':'awc'] = scaler.transform(
-        train_X.loc[:, 'RR1':'awc'])
-    test_X.loc[:, 'RR1':'awc'] = scaler.transform(
-        test_X.loc[:, 'RR1':'awc'])
+    train_X.loc[:, 'RR01-01':'awc'] = scaler.transform(
+        train_X.loc[:, 'RR01-01':'awc'])
+    test_X.loc[:, 'RR01-01':'awc'] = scaler.transform(
+        test_X.loc[:, 'RR01-01':'awc'])
 
     return train_X, test_X
 
@@ -277,11 +277,11 @@ def standardize_current(current_X):
     scaler = sklearn.preprocessing.StandardScaler()
 
     # Compute the mean and standard deviation of the training set
-    #scaler.fit(train_X.loc[:, 'RR1':'awc'])
-    scaler.fit(current_X.loc[:, 'RR1':'awc'])
+    #scaler.fit(train_X.loc[:, 'RR01-01':'awc'])
+    scaler.fit(current_X.loc[:, 'RR01-01':'awc'])
 
-    current_X.loc[:, 'RR1':'awc'] = scaler.transform(
-        current_X.loc[:, 'RR1':'awc'])
+    current_X.loc[:, 'RR01-01':'awc'] = scaler.transform(
+        current_X.loc[:, 'RR01-01':'awc'])
 
     return current_X
 
