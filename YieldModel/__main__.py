@@ -44,7 +44,7 @@ def set_up_parser():
     # I/O arguments
     parser.add_argument(
         '-i', '--input-file',
-        default=os.path.join(ROOT_DIRECTORY, 'data', 'daily_wheat_model_dataset_1980-2024.csv'),
+        default=os.path.join(ROOT_DIRECTORY, 'data', 'wheat_model_dataset_1980-2024.csv'),
         help='input dataset for yield prediction')
     parser.add_argument(
         '-o', '--output-dir',
@@ -251,6 +251,7 @@ def main(args):
     output_data['predicted production'] = output_data['predicted yield'] * output_data['area']
     
     plot_yields(output_data, args.output_dir, args.model)
+    plot_production(output_data, args.output_dir, args.model)
 
     # current_data = pd.read_csv(os.path.join(os.path.realpath(sys.path[0]), 'data', 'wheat_model_current.csv'),)
     # current_data = current_data.drop("Unnamed: 0", axis=1)
