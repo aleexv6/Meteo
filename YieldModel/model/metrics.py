@@ -342,11 +342,11 @@ def plot_current_production(df, output_dir, output_current, model):
     all_years = sorted(set(list(franceTotalProduction.index) + list(franceCurrentTotalProduction.index)))
     ax.set_xticks(all_years)
     ax.set_xticklabels([str(int(year)) for year in all_years])
-    ax.set_title('Actual vs Predicted French Wheat Production (Million Metric Tonnes)', fontsize=14, pad=20)
+    ax.set_title('Predicted French Wheat Production (Million Metric Tonnes)', fontsize=14, pad=20)
     ax.set_xlabel('Year', fontsize=12)
     ax.set_ylabel('Production (Million MT)', fontsize=12)
 
-    plt.figtext(0.7, 0.15, f"2025 Predicted production : {franceCurrentTotalProduction['predicted current production'].values[0] / 1000000:.3f} Million MT", 
+    plt.figtext(0.35, 0.15, f"2025 Predicted production : {franceCurrentTotalProduction['predicted current production'].values[0] / 1000000:.3f} Million MT (as of 01/04/25)", 
            bbox=dict(facecolor='white', alpha=0.8))
 
     # Add legend
