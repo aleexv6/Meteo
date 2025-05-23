@@ -8,6 +8,7 @@ import statistics
 
 import matplotlib.pyplot as plt
 import os
+from datetime import datetime
 
 # Conversion rates (from http://www.sagis.org.za/conversion_table.html)
 BSH_AC_TO_T_HA = 0.06277
@@ -346,16 +347,16 @@ def plot_current_production(df, output_dir, output_current, model):
     ax.set_xlabel('Year', fontsize=12)
     ax.set_ylabel('Production (Million MT)', fontsize=12)
 
-    plt.figtext(0.35, 0.15, f"2025 Predicted production : {franceCurrentTotalProduction['predicted current production'].values[0] / 1000000:.3f} Million MT (as of 01/04/25)", 
+    plt.figtext(0.35, 0.15, f"2025 Predicted production : {franceCurrentTotalProduction['predicted current production'].values[0] / 1000000:.3f} Million MT (as of {datetime.today().strftime('%d-%m-%Y')})", 
            bbox=dict(facecolor='white', alpha=0.8))
 
     # Add legend
-    ax.legend()
+    ax.legend(loc="lower right")
     
     # Adjust layout to prevent label cutoff
     plt.tight_layout()
     
     dirname = os.path.join(output_dir, model)
-    filename = os.path.join(dirname, 'production_and_current.png')
+    filename = os.path.join(dirname, datetime.today().strftime('%d-%m-%Y'))
 
     plt.savefig(filename)
